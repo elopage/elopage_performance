@@ -57,5 +57,5 @@ class NumberFieldStatistics extends FieldStatistics {
 
   late final double sum;
   late final int issuesWithFieldCount;
-  double get averageValuePerIssue => sum / issuesWithFieldCount;
+  double get averageValuePerIssue => issuesWithFieldCount > 0 ? sum / issuesWithFieldCount : 0;
 }
