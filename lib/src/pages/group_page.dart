@@ -30,7 +30,9 @@ class _GroupPageState extends State<GroupPage> {
   Future<void> _init() async {
     jira = serviceLocator();
 
-    users = (await jira.groups.getUsersFromGroup(groupname: widget.groupName, maxResults: 100)).values;
+    final usersResult = await jira.groups.getUsersFromGroup(groupname: widget.groupName, maxResults: 100);
+    users = usersResult.values;
+
     if (mounted) setState(() {});
   }
 

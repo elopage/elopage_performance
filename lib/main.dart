@@ -1,8 +1,4 @@
-import 'package:atlassian_apis/jira_platform.dart';
-import 'package:auto_size_text/auto_size_text.dart';
-import 'package:elopage_performance/src/jira/jira.dart';
 import 'package:elopage_performance/src/pages/group_page.dart';
-import 'package:elopage_performance/src/pages/performance_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'src/service_locator.dart';
