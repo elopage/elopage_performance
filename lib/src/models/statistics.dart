@@ -1,17 +1,15 @@
-import 'package:atlassian_apis/jira_platform.dart';
-import 'package:elopage_performance/src/extensions/field_details_ext.dart';
+import 'package:elopage_performance/src/models/field_configuration.dart';
 import 'package:elopage_performance/src/models/fileld_type.dart';
 import 'package:elopage_performance/src/models/performance_data.dart';
 
 abstract class Statistics {
-  const Statistics.performance({this.composed});
+  const Statistics({this.composed});
 
   final Statistics? composed;
 }
 
 class GeneralStatistics extends Statistics {
-  GeneralStatistics.performance(final PerformanceData data, final int workingDays, {super.composed})
-      : super.performance() {
+  GeneralStatistics(final PerformanceData data, final int workingDays, {super.composed}) {
     issuesCount = data.issues.length;
 
     issuesPerWorkingDay = workingDays > 0 ? issuesCount / workingDays : 0;
@@ -24,8 +22,7 @@ class GeneralStatistics extends Statistics {
 }
 
 class TimeLoggingStatistics extends Statistics {
-  TimeLoggingStatistics.performance(final PerformanceData data, final int workingDays, {super.composed})
-      : super.performance() {
+  TimeLoggingStatistics(final PerformanceData data, final int workingDays, {super.composed}) {
     totalLogged = data.totalLogged;
     loggedTimePerIssue = data.issues.isNotEmpty
         ? Duration(milliseconds: totalLogged.inMilliseconds ~/ data.issues.length)
@@ -40,20 +37,27 @@ class TimeLoggingStatistics extends Statistics {
 }
 
 abstract class FieldStatistics extends Statistics {
-  const FieldStatistics.performance(this.field, {super.composed}) : super.performance();
+  const FieldStatistics(this.configuration, {super.composed});
 
-  final FieldDetails field;
+  final FieldConfiguration configuration;
 }
 
 class NumberFieldStatistics extends FieldStatistics {
-  NumberFieldStatistics.performance(super.field, final PerformanceData data, {super.composed}) : super.performance() {
-    assert(field.type == FieldType.number, 'This statistics can\'t accept other then "number" fields');
+  NumberFieldStatistics(
+    final NumberFieldConfiguration super.configuration,
+    final PerformanceData data, {
+    super.composed,
+  }) {
+    assert(configuration.type == FieldType.number, 'This statistics can\'t accept other then "number" fields');
     final issues = data.issues;
-    final issuesWithField = issues.where((i) => i.fields?[field.key] != null);
+    final issuesWithField = issues.where((i) => i.fields?[configuration.field.key] != null);
 
     issuesWithFieldCount = issuesWithField.length;
-    sum = issuesWithField.fold(0.0, (p, issue) => p + issue.fields![field.key]);
+    sum = issuesWithField.fold(0.0, (p, issue) => p + issue.fields![configuration.field.key]);
   }
+
+  @override
+  NumberFieldConfiguration get configuration => super.configuration as NumberFieldConfiguration;
 
   late final double sum;
   late final int issuesWithFieldCount;

@@ -1,6 +1,9 @@
-import 'package:atlassian_apis/jira_platform.dart' hide Icon;
-import 'package:elopage_performance/src/components/fields_selector.dart';
+import 'package:atlassian_apis/jira_platform.dart' hide Icon, FieldConfiguration;
+import 'package:elopage_performance/src/components/fields_configuration_selector.dart';
 import 'package:elopage_performance/src/components/group_selector.dart';
+import 'package:elopage_performance/src/extensions/field_details_ext.dart';
+import 'package:elopage_performance/src/models/field_configuration.dart';
+import 'package:elopage_performance/src/models/fileld_type.dart';
 import 'package:elopage_performance/src/models/statistics_configuration.dart';
 import 'package:flutter/material.dart';
 
@@ -16,7 +19,7 @@ class ConfigurationEditPage extends StatefulWidget {
 class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final fields = <FieldDetails>[];
+  final fieldConfigurations = <FieldConfiguration>[];
   late final TextEditingController nameController;
   late final TextEditingController groupingController;
 
@@ -30,7 +33,7 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
     group = widget.editConfig?.group;
     nameController = TextEditingController(text: widget.editConfig?.name);
     groupingController = TextEditingController(text: widget.editConfig?.dataGrouping.toString() ?? '1');
-    if (isEditing) fields.addAll(widget.editConfig!.fields);
+    if (isEditing) fieldConfigurations.addAll(widget.editConfig!.fieldConfigurations);
   }
 
   @override
@@ -43,11 +46,7 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          isEditing ? 'Editing "${widget.editConfig?.name}"' : 'New configuration',
-        ),
-      ),
+      appBar: AppBar(title: Text(isEditing ? 'Editing "${widget.editConfig?.name}"' : 'New configuration')),
       floatingActionButton: SizedBox(
         width: 70.0,
         height: 40.0,
@@ -145,7 +144,7 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
                   const Divider(height: 32),
                 ],
               ),
-              footer: fields.isNotEmpty
+              footer: fieldConfigurations.isNotEmpty
                   ? null
                   : Container(
                       height: 65,
@@ -155,19 +154,20 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
                         style: Theme.of(context).textTheme.headline5?.copyWith(color: Colors.grey[300]),
                       ),
                     ),
-              children: fields
-                  .map<ListTile>((f) => ListTile(
+              children: fieldConfigurations
+                  .map<ListTile>((c) => ListTile(
                         minVerticalPadding: 8,
-                        key: ValueKey(f.id ?? ''),
-                        title: Text(f.name ?? ''),
-                        subtitle: Text(f.id ?? ''),
+                        key: ValueKey(c.field.id ?? ''),
+                        title: Text(c.field.name ?? ''),
+                        subtitle: Text(c.field.id ?? ''),
+                        leading: buildLeading(context, c),
                         contentPadding: const EdgeInsets.only(left: 8.0),
                         trailing: Padding(
                           padding: const EdgeInsets.only(right: 36.0),
                           child: IconButton(
                             iconSize: 20,
                             splashRadius: 22,
-                            onPressed: () => removeField(f),
+                            onPressed: () => removeField(c),
                             icon: Icon(Icons.delete_sweep_outlined, color: Colors.red[300]!),
                           ),
                         ),
@@ -181,8 +181,19 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
     );
   }
 
-  void removeField(final FieldDetails field) {
-    fields.remove(field);
+  Widget buildLeading(final BuildContext context, final FieldConfiguration configuration) {
+    switch (configuration.field.type) {
+      case FieldType.number:
+        final representation = (configuration as NumberFieldConfiguration).representation;
+        return Icon(representation == NumberFieldRepresentation.time ? Icons.timer_outlined : Icons.onetwothree);
+
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  void removeField(final FieldConfiguration configuration) {
+    fieldConfigurations.remove(configuration);
 
     if (mounted) setState(() {});
   }
@@ -190,8 +201,8 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
   void reorderFields(int oldIndex, int newIndex) {
     if (newIndex > oldIndex) newIndex -= 1;
 
-    final field = fields.removeAt(oldIndex);
-    fields.insert(newIndex, field);
+    final field = fieldConfigurations.removeAt(oldIndex);
+    fieldConfigurations.insert(newIndex, field);
 
     if (mounted) setState(() {});
   }
@@ -228,14 +239,14 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
   }
 
   Future<void> openFieldSelector() async {
-    final selected = await showDialog<FieldDetails?>(
+    final selected = await showDialog<FieldConfiguration?>(
       context: context,
-      builder: (_) => FieldsSelector(exclude: fields),
+      builder: (context) => FieldsConfigurationSelector(exclude: fieldConfigurations),
     );
 
     if (selected == null) return;
 
-    fields.add(selected);
+    fieldConfigurations.add(selected);
 
     if (mounted) setState(() {});
   }
@@ -251,8 +262,8 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
       final statisticsConfig = StatisticsConfiguration(
         name: name,
         group: group!,
-        fields: fields,
         dataGrouping: grouping,
+        fieldConfigurations: fieldConfigurations,
       );
 
       if (mounted) Navigator.of(context).pop(statisticsConfig);

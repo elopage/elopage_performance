@@ -1,6 +1,6 @@
-import 'package:atlassian_apis/jira_platform.dart';
-import 'package:elopage_performance/src/extensions/field_details_ext.dart';
+import 'package:atlassian_apis/jira_platform.dart' hide FieldConfiguration;
 import 'package:elopage_performance/src/jira/jira.dart';
+import 'package:elopage_performance/src/models/field_configuration.dart';
 import 'package:elopage_performance/src/models/performance_data.dart';
 import 'package:elopage_performance/src/models/statistics.dart';
 import 'package:elopage_performance/src/models/statistics_configuration.dart';
@@ -93,8 +93,8 @@ class PerformanceController {
     }
 
     _statistics = [
-      GeneralStatistics.performance(data, workingDays, composed: TimeLoggingStatistics.performance(data, workingDays)),
-      ...configuration.fields.map((f) => f.buildStatistics(data)).whereType<Statistics>(),
+      GeneralStatistics(data, workingDays, composed: TimeLoggingStatistics(data, workingDays)),
+      ...configuration.fieldConfigurations.map((f) => f.buildStatistics(data)).whereType<Statistics>(),
     ];
   }
 

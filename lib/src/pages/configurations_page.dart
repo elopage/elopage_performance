@@ -5,14 +5,14 @@ import 'package:elopage_performance/src/pages/configuration_edit_page.dart';
 import 'package:elopage_performance/src/pages/group_page.dart';
 import 'package:flutter/material.dart';
 
-class ConfigsPage extends StatefulWidget {
-  const ConfigsPage({Key? key}) : super(key: key);
+class ConfigurationsPage extends StatefulWidget {
+  const ConfigurationsPage({Key? key}) : super(key: key);
 
   @override
-  State<ConfigsPage> createState() => _ConfigsPageState();
+  State<ConfigurationsPage> createState() => _ConfigurationsPageState();
 }
 
-class _ConfigsPageState extends State<ConfigsPage> {
+class _ConfigurationsPageState extends State<ConfigurationsPage> {
   bool isEditing = false;
 
   late final Jira jira;
@@ -101,25 +101,25 @@ class _ConfigsPageState extends State<ConfigsPage> {
   Future<void> createConfig() async {
     if (!mounted) return;
 
-    final statistics = await Navigator.of(context)
+    final configuration = await Navigator.of(context)
         .push<StatisticsConfiguration>(MaterialPageRoute(builder: (_) => const ConfigurationEditPage()));
 
-    if (statistics == null) return;
+    if (configuration == null) return;
 
-    controller.save(statistics);
+    controller.save(configuration);
   }
 
   Future<void> editConfig(final int index) async {
     if (!mounted) return;
 
     final currentConfig = controller.configurations[index];
-    final statistics = await Navigator.of(context).push<StatisticsConfiguration>(
+    final configuration = await Navigator.of(context).push<StatisticsConfiguration>(
       MaterialPageRoute(builder: (_) => ConfigurationEditPage(editConfig: currentConfig)),
     );
 
-    if (statistics == null) return;
+    if (configuration == null) return;
 
-    controller.edit(index, statistics);
+    controller.edit(index, configuration);
   }
 }
 
@@ -170,7 +170,7 @@ class _StatisticsTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text('Fields', style: trailingTitle),
-                  Text('${config.fields.length}', style: trailingSubtitle),
+                  Text('${config.fieldConfigurations.length}', style: trailingSubtitle),
                 ],
               ),
             if (showEditingButtons) const SizedBox(width: 32),

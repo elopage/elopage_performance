@@ -3,6 +3,7 @@ import 'package:elopage_performance/src/components/user_group_badge.dart';
 import 'package:elopage_performance/src/components/user_icon.dart';
 import 'package:elopage_performance/src/components/value_card.dart';
 import 'package:elopage_performance/src/controllers/performance_controller.dart';
+import 'package:elopage_performance/src/models/field_configuration.dart';
 import 'package:elopage_performance/src/models/statistics.dart';
 import 'package:elopage_performance/src/models/statistics_configuration.dart';
 import 'package:flutter/material.dart';
@@ -91,10 +92,10 @@ class StatisticsSection extends StatelessWidget {
     if (statistics is GeneralStatistics) {
       return null;
     } else if (statistics is TimeLoggingStatistics) {
-      return 'Timeing';
+      return 'Logging';
     } else if (statistics is NumberFieldStatistics) {
       final numberField = statistics as NumberFieldStatistics;
-      return '${numberField.field.name}';
+      return '${numberField.configuration.field.name}';
     }
 
     assert(false, 'Check why app entered this point');
@@ -128,12 +129,16 @@ class StatisticsSection extends StatelessWidget {
         ValueCard(value: _formatDuration(statistics.loggedTimePerWorkingDay), title: 'Logged / Day'),
       ]);
     } else if (statistics is NumberFieldStatistics) {
+      final sumValue = statistics.configuration.representation == NumberFieldRepresentation.time
+          ? _formatDuration(Duration(seconds: statistics.sum.round()))
+          : statistics.sum.toStringAsFixed(statistics.sum % 1 > 0.005 ? 2 : 0);
+      final averageValue = statistics.configuration.representation == NumberFieldRepresentation.time
+          ? _formatDuration(Duration(seconds: statistics.averageValuePerIssue.round()))
+          : statistics.averageValuePerIssue.toStringAsFixed(2);
+
       widgets.addAll([
-        ValueCard(
-          value: statistics.sum.toStringAsFixed(statistics.sum % 1 > 0.005 ? 2 : 0),
-          title: 'Σ "${statistics.field.name}"',
-        ),
-        ValueCard(value: statistics.averageValuePerIssue.toStringAsFixed(2), title: 'Average'),
+        ValueCard(value: sumValue, title: 'Σ "${statistics.configuration.field.name}"'),
+        ValueCard(value: averageValue, title: 'Average'),
         ValueCard(value: '${statistics.issuesWithFieldCount}', title: 'Issues with field'),
       ]);
     }
@@ -143,5 +148,7 @@ class StatisticsSection extends StatelessWidget {
     return widgets;
   }
 
-  String _formatDuration(final Duration duration) => '${duration.inHours}h ${duration.inMinutes % 60}m';
+  String _formatDuration(final Duration duration) {
+    return '${duration.inHours}h ${duration.inMinutes % 60}m';
+  }
 }
