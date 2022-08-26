@@ -23,8 +23,8 @@ class GeneralStatistics extends Statistics {
   late final double workingDaysPerIssue;
 }
 
-class TimeingStatistics extends Statistics {
-  TimeingStatistics.performance(final PerformanceData data, final int workingDays, {super.composed})
+class TimeLoggingStatistics extends Statistics {
+  TimeLoggingStatistics.performance(final PerformanceData data, final int workingDays, {super.composed})
       : super.performance() {
     totalLogged = data.totalLogged;
     loggedTimePerIssue = data.issues.isNotEmpty
@@ -52,7 +52,7 @@ class NumberFieldStatistics extends FieldStatistics {
     final issuesWithField = issues.where((i) => i.fields?[field.key] != null);
 
     issuesWithFieldCount = issuesWithField.length;
-    sum = issuesWithField.fold(0.0, (p, issue) => p + (issue.fields![field.key] as double));
+    sum = issuesWithField.fold(0.0, (p, issue) => p + issue.fields![field.key]);
   }
 
   late final double sum;

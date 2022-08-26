@@ -3,6 +3,7 @@ import 'package:elopage_performance/src/extensions/field_details_ext.dart';
 import 'package:elopage_performance/src/jira/jira.dart';
 import 'package:elopage_performance/src/models/performance_data.dart';
 import 'package:elopage_performance/src/models/statistics.dart';
+import 'package:elopage_performance/src/models/statistics_configuration.dart';
 import 'package:elopage_performance/src/service_locator.dart';
 
 extension on DateTime {
@@ -24,37 +25,23 @@ extension on DateTime {
 }
 
 class PerformanceController {
-  PerformanceController(this.period, this.users) {
+  PerformanceController(this.configuration, this.users) {
     assert(users.isNotEmpty, 'You must pass at least 1 user for gathering statistics');
-    assert(period >= 1, 'Period must be higher or equal of 1');
+    assert(configuration.dataGrouping >= 1, 'Period must be higher or equal of 1');
 
     jira = serviceLocator();
     final now = DateTime.now();
     // Don't take in account data genrated today
     endDate = DateTime(now.year, now.month, now.day);
-    startDate = endDate.subtract(Duration(days: period * DateTime.daysPerWeek));
+    startDate = endDate.subtract(Duration(days: configuration.dataGrouping * DateTime.daysPerWeek));
     workingDays = startDate.countWorkingDaysBefore(endDate);
-    statisticFields = [
-      FieldDetails.fromJson({
-        'id': 'customfield_10897',
-        'key': 'customfield_10897',
-        'name': 'QA count',
-        'schema': {'type': 'number'},
-      }),
-      FieldDetails.fromJson({
-        'id': 'customfield_10896',
-        'key': 'customfield_10896',
-        'name': 'Reviews Count',
-        'schema': {'type': 'number'},
-      })
-    ];
   }
+
+  final StatisticsConfiguration configuration;
 
   // MARK: Configurations
   /// Period in weeks for now
-  final int period;
   final List<UserDetails> users;
-  late final List<FieldDetails> statisticFields;
 
   // MARK:
   late final int workingDays;
@@ -106,8 +93,10 @@ class PerformanceController {
     }
 
     _statistics = [
-      GeneralStatistics.performance(data, workingDays, composed: TimeingStatistics.performance(data, workingDays)),
-      ...statisticFields.map((f) => f.buildStatistics(data)).whereType<Statistics>(),
+      GeneralStatistics.performance(data, workingDays, composed: TimeLoggingStatistics.performance(data, workingDays)),
+      ...configuration.fields.map((f) => f.buildStatistics(data)).whereType<Statistics>(),
     ];
   }
+
+  void dispose() {}
 }

@@ -4,16 +4,22 @@ import 'package:elopage_performance/src/components/user_icon.dart';
 import 'package:elopage_performance/src/components/value_card.dart';
 import 'package:elopage_performance/src/controllers/performance_controller.dart';
 import 'package:elopage_performance/src/models/statistics.dart';
+import 'package:elopage_performance/src/models/statistics_configuration.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class PerformancePage extends StatefulWidget {
-  const PerformancePage({Key? key, required this.users, required this.title})
-      : assert(users.length > 0, 'PerformancePage must accept at least one user'),
+  const PerformancePage({
+    Key? key,
+    required this.users,
+    required this.title,
+    required this.configuration,
+  })  : assert(users.length > 0, 'PerformancePage must accept at least one user'),
         super(key: key);
 
   final String title;
   final List<UserDetails> users;
+  final StatisticsConfiguration configuration;
 
   @override
   State<PerformancePage> createState() => _PerformancePageState();
@@ -26,10 +32,16 @@ class _PerformancePageState extends State<PerformancePage> {
   @override
   void initState() {
     super.initState();
-    controller = PerformanceController(1, widget.users);
+    controller = PerformanceController(widget.configuration, widget.users);
     controller.fetchPageData().then((_) {
       if (mounted) setState(() => isLoading = false);
     });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   Iterable<String> get userIds => widget.users.map((user) => user.accountId).whereType<String>();
@@ -39,7 +51,6 @@ class _PerformancePageState extends State<PerformancePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: const BackButton(),
         title: Text(widget.title),
         actions: [
           Container(
@@ -79,7 +90,7 @@ class StatisticsSection extends StatelessWidget {
   String? get _title {
     if (statistics is GeneralStatistics) {
       return null;
-    } else if (statistics is TimeingStatistics) {
+    } else if (statistics is TimeLoggingStatistics) {
       return 'Timeing';
     } else if (statistics is NumberFieldStatistics) {
       final numberField = statistics as NumberFieldStatistics;
@@ -110,7 +121,7 @@ class StatisticsSection extends StatelessWidget {
         ValueCard(value: statistics.issuesPerWorkingDay.toStringAsFixed(2), title: 'Issue / Day'),
         ValueCard(value: statistics.workingDaysPerIssue.toStringAsFixed(2), title: 'Days / Issue'),
       ]);
-    } else if (statistics is TimeingStatistics) {
+    } else if (statistics is TimeLoggingStatistics) {
       widgets.addAll([
         ValueCard(value: _formatDuration(statistics.totalLogged), title: 'Time logged'),
         ValueCard(value: _formatDuration(statistics.loggedTimePerIssue), title: 'Logged / Issue'),

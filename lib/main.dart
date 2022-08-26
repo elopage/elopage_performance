@@ -1,9 +1,11 @@
-import 'package:elopage_performance/src/pages/group_page.dart';
+import 'package:elopage_performance/src/pages/configs_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'src/service_locator.dart';
 
-void main() {
+void main() async {
+  await Hive.initFlutter();
   serviceLocator.initializeDependencies();
   runApp(const MyApp());
 }
@@ -16,10 +18,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ThemeData(primarySwatch: Colors.teal);
     return MaterialApp(
+      home: const ConfigsPage(),
       title: 'elopage performance',
       debugShowCheckedModeBanner: false,
       theme: theme.copyWith(textTheme: GoogleFonts.latoTextTheme()),
-      home: const GroupPage(groupName: 'elopage_mobile'),
     );
   }
 }
