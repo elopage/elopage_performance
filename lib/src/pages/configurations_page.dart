@@ -3,6 +3,7 @@ import 'package:elopage_performance/src/jira/jira.dart';
 import 'package:elopage_performance/src/models/statistics_configuration.dart';
 import 'package:elopage_performance/src/pages/configuration_edit_page.dart';
 import 'package:elopage_performance/src/pages/group_page.dart';
+import 'package:elopage_performance/src/styles/animation_styles.dart';
 import 'package:flutter/material.dart';
 
 class ConfigurationsPage extends StatefulWidget {
@@ -41,7 +42,7 @@ class _ConfigurationsPageState extends State<ConfigurationsPage> {
         actions: [
           AnimatedOpacity(
             opacity: isEditing || controller.configurations.isEmpty ? 0 : 1,
-            duration: const Duration(milliseconds: 200),
+            duration: AnimationStyles.defaultDuration,
             child: Padding(
               padding: const EdgeInsets.only(right: 16),
               child: IconButton(
@@ -60,7 +61,7 @@ class _ConfigurationsPageState extends State<ConfigurationsPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: AnimatedSize(
-            duration: const Duration(milliseconds: 200),
+            duration: AnimationStyles.defaultDuration,
             child: Text(
               isEditing ? 'Exit editing' : 'New configuration',
               style: Theme.of(context).primaryTextTheme.button,
@@ -151,7 +152,7 @@ class _StatisticsTile extends StatelessWidget {
       title: Text(config.name),
       subtitle: Text(config.group.name ?? ''),
       trailing: AnimatedSize(
-        duration: const Duration(milliseconds: 200),
+        duration: AnimationStyles.defaultDuration,
         alignment: Alignment.centerRight,
         child: Row(
           mainAxisSize: MainAxisSize.min,
