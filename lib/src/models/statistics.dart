@@ -23,17 +23,14 @@ class GeneralStatistics extends Statistics {
 
 class TimeLoggingStatistics extends Statistics {
   TimeLoggingStatistics(final PerformanceData data, final int workingDays, {super.composed}) {
-    totalLogged = data.totalLogged;
-    loggedTimePerIssue = data.issues.isNotEmpty
-        ? Duration(milliseconds: totalLogged.inMilliseconds ~/ data.issues.length)
-        : Duration.zero;
-    loggedTimePerWorkingDay =
-        workingDays > 0 ? Duration(milliseconds: totalLogged.inMilliseconds ~/ workingDays) : Duration.zero;
+    totalLogged = data.totalLoggedMilis;
+    loggedTimePerWorkingDay = workingDays > 0 ? data.totalLoggedMilis ~/ workingDays : 0;
+    loggedTimePerIssue = data.issues.isNotEmpty ? data.totalLoggedMilis ~/ data.issues.length : 0;
   }
 
-  late final Duration totalLogged;
-  late final Duration loggedTimePerIssue;
-  late final Duration loggedTimePerWorkingDay;
+  late final int totalLogged;
+  late final int loggedTimePerIssue;
+  late final int loggedTimePerWorkingDay;
 }
 
 abstract class FieldStatistics extends Statistics {

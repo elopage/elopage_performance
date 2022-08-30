@@ -1,5 +1,6 @@
 import 'package:atlassian_apis/jira_platform.dart' hide Icon;
 import 'package:collection/collection.dart';
+import 'package:elopage_performance/src/components/linear_chart.dart';
 import 'package:elopage_performance/src/components/user_group_badge.dart';
 import 'package:elopage_performance/src/components/user_icon.dart';
 import 'package:elopage_performance/src/components/value_card.dart';
@@ -8,7 +9,6 @@ import 'package:elopage_performance/src/models/field_configuration.dart';
 import 'package:elopage_performance/src/models/statistics.dart';
 import 'package:elopage_performance/src/models/statistics_configuration.dart';
 import 'package:elopage_performance/src/styles/animation_styles.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -40,7 +40,6 @@ class _PerformancePageState extends State<PerformancePage> {
   @override
   void initState() {
     super.initState();
-
     controller = PerformanceController(widget.configuration, widget.users);
   }
 
@@ -100,185 +99,24 @@ class _PerformancePageState extends State<PerformancePage> {
     );
   }
 
-  void _openChart<T extends Statistics>(final LinearChartYValueBuilder builder) {
+  void _openChart<T extends Statistics>({
+    required final String title,
+    required final LinearChartYValueBuilder valueBuilder,
+    required final ValueRepresentationBuilder representationBuilder,
+  }) {
     if (mounted) {
       showDialog(
         context: context,
         builder: (context) => Center(
-          child: Chart<T>(controller: controller, yValueBuilder: builder),
+          child: Chart<T>(
+            title: title,
+            controller: controller,
+            yValueBuilder: valueBuilder,
+            representationBuilder: representationBuilder,
+          ),
         ),
       );
     }
-  }
-}
-
-typedef LinearChartYValueBuilder = double? Function(PageStatisticsData statistics);
-
-class Chart<T extends Statistics> extends StatefulWidget {
-  const Chart({Key? key, required this.controller, required this.yValueBuilder}) : super(key: key);
-
-  final PerformanceController controller;
-  final LinearChartYValueBuilder yValueBuilder;
-
-  @override
-  State<Chart> createState() => _ChartState<T>();
-}
-
-class _ChartState<T extends Statistics> extends State<Chart> {
-  int offset = 0;
-  int maxPeriods = 3;
-  static const pixelsPerPeriod = 50;
-
-  int get currentMaxPeriods => maxPeriods + offset;
-
-  List<FlSpot> get availableSpots {
-    final entries = widget.controller.data.entries.toList();
-
-    return entries.map(_spotBuilder).whereType<FlSpot>().toList();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    retrieveSpots();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final newMaxPeriods = (MediaQuery.of(context).size.width - 150) ~/ pixelsPerPeriod;
-    if (newMaxPeriods == maxPeriods) return;
-    maxPeriods = newMaxPeriods;
-    retrieveSpots();
-  }
-
-  Future<void> retrieveSpots() async {
-    for (var i = offset; i < currentMaxPeriods; i++) {
-      buildPointForPeriod(i);
-    }
-  }
-
-  Future<void> buildPointForPeriod(final int period) async {
-    final data = widget.controller.retrieveStatistics(period);
-    if (data.statistics != null) return;
-    await data.statisticsComputation;
-    if (mounted) setState(() {});
-  }
-
-  List<FlSpot> buildCurrentViewSpots() {
-    final spots = availableSpots;
-    if (offset >= spots.length) return [];
-    return spots.getRange(offset, currentMaxPeriods > spots.length ? spots.length : currentMaxPeriods).toList();
-  }
-
-  void addOffset() => setState(() {
-        offset++;
-        retrieveSpots();
-      });
-
-  void reduceOffset() => setState(() => offset--);
-
-  FlSpot? _spotBuilder(final MapEntry<int, PageStatisticsData> entry) {
-    final yValue = widget.yValueBuilder(entry.value);
-    if (yValue == null) return null;
-    return FlSpot(-entry.key.toDouble(), yValue);
-  }
-
-  KeyEventResult _onKeyTap(final FocusNode node, final KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.skipRemainingHandlers;
-    switch (event.logicalKey.keyId) {
-      case 0x100000303:
-        if (offset > 0) reduceOffset();
-        break;
-      case 0x100000302:
-        addOffset();
-        break;
-    }
-
-    return KeyEventResult.handled;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      autofocus: true,
-      onKeyEvent: _onKeyTap,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          margin: const EdgeInsets.all(32),
-          padding: const EdgeInsets.all(12),
-          constraints: BoxConstraints(maxHeight: 400, maxWidth: maxPeriods * 50 + 100),
-          decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(6)),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    splashRadius: 1,
-                    onPressed: addOffset,
-                    icon: const Icon(Icons.chevron_left_rounded),
-                  ),
-                  const SizedBox(width: 32),
-                  Text(
-                    'Offset: ${offset * widget.controller.configuration.dataGrouping}w',
-                    style: Theme.of(context).textTheme.headline6?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(width: 32),
-                  IconButton(
-                    splashRadius: 1,
-                    icon: const Icon(Icons.chevron_right_rounded),
-                    onPressed: offset <= 0 ? null : reduceOffset,
-                  ),
-                ],
-              ),
-              Expanded(
-                child: LineChart(
-                  LineChartData(
-                    minY: 0,
-                    maxX: -offset.toDouble(),
-                    minX: -(currentMaxPeriods - 1).toDouble(),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(
-                        axisNameWidget: const Text('Period in weeks'),
-                        sideTitles: SideTitles(
-                          interval: 1,
-                          showTitles: true,
-                          reservedSize: 30,
-                          getTitlesWidget: (value, meta) {
-                            final periodInWeeks = widget.controller.configuration.dataGrouping;
-                            final period = value.round().abs();
-                            final prevStr = '${(period + 1) * periodInWeeks}${period == 0 ? 'w' : ''}';
-                            final curStr = period == 0 ? 'now' : '${period * periodInWeeks}w';
-                            return Padding(
-                                padding: const EdgeInsets.only(top: 10),
-                                child: Text(
-                                  '$prevStr-$curStr',
-                                  style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 10),
-                                ));
-                          },
-                        ),
-                      ),
-                    ),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: buildCurrentViewSpots(),
-                        preventCurveOverShooting: true,
-                        color: Theme.of(context).primaryColor,
-                        belowBarData: BarAreaData(show: true, color: Theme.of(context).primaryColor.withOpacity(0.2)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -349,9 +187,11 @@ class _PeriodSelectorState extends State<_PeriodSelector> {
   KeyEventResult _onKeyTap(final FocusNode node, final KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.skipRemainingHandlers;
     switch (event.logicalKey.keyId) {
+      case 100:
       case 0x100000303:
         _openPrevPage();
         break;
+      case 97:
       case 0x100000302:
         _openNextPage();
         break;
@@ -370,8 +210,6 @@ class _PeriodSelectorState extends State<_PeriodSelector> {
         curve: Curves.easeInOut,
       );
 }
-
-typedef LinearChartBuilder = void Function<T extends Statistics>(LinearChartYValueBuilder builder);
 
 class _StatisticsSection extends StatelessWidget {
   const _StatisticsSection(final this.statistics, {Key? key, required this.openLinearChart}) : super(key: key);
@@ -413,26 +251,38 @@ class _StatisticsSection extends StatelessWidget {
         ValueCard(
           title: 'Issues',
           value: '${statistics.issuesCount}',
-          onTap: () => openLinearChart<GeneralStatistics>((pageStatistics) {
-            final statistics = _retrieveStatistics<GeneralStatistics>(pageStatistics);
-            return statistics?.issuesCount.toDouble();
-          }),
+          onTap: () => openLinearChart<GeneralStatistics>(
+            title: 'Issues',
+            representationBuilder: buildRepresentation,
+            valueBuilder: (pageStatistics) {
+              final statistics = _retrieveStatistics<GeneralStatistics>(pageStatistics);
+              return statistics?.issuesCount.toDouble();
+            },
+          ),
         ),
         ValueCard(
           title: 'Issue / Day',
           value: statistics.issuesPerWorkingDay.toStringAsFixed(2),
-          onTap: () => openLinearChart<GeneralStatistics>((pageStatistics) {
-            final statistics = _retrieveStatistics<GeneralStatistics>(pageStatistics);
-            return statistics?.issuesPerWorkingDay.toDouble();
-          }),
+          onTap: () => openLinearChart<GeneralStatistics>(
+            title: 'Issue / Day',
+            representationBuilder: buildRepresentation,
+            valueBuilder: (pageStatistics) {
+              final statistics = _retrieveStatistics<GeneralStatistics>(pageStatistics);
+              return statistics?.issuesPerWorkingDay.toDouble();
+            },
+          ),
         ),
         ValueCard(
           title: 'Days / Issue',
           value: statistics.workingDaysPerIssue.toStringAsFixed(2),
-          onTap: () => openLinearChart<GeneralStatistics>((pageStatistics) {
-            final statistics = _retrieveStatistics<GeneralStatistics>(pageStatistics);
-            return statistics?.workingDaysPerIssue.toDouble();
-          }),
+          onTap: () => openLinearChart<GeneralStatistics>(
+            title: 'Days / Issue',
+            representationBuilder: buildRepresentation,
+            valueBuilder: (pageStatistics) {
+              final statistics = _retrieveStatistics<GeneralStatistics>(pageStatistics);
+              return statistics?.workingDaysPerIssue.toDouble();
+            },
+          ),
         ),
       ]);
     } else if (statistics is TimeLoggingStatistics) {
@@ -440,63 +290,86 @@ class _StatisticsSection extends StatelessWidget {
         ValueCard(
           title: 'Time logged',
           value: _formatDuration(statistics.totalLogged),
-          onTap: () => openLinearChart<TimeLoggingStatistics>((pageStatistics) {
-            final statistics = _retrieveStatistics<TimeLoggingStatistics>(pageStatistics);
-            return statistics?.totalLogged.inMilliseconds.toDouble();
-          }),
+          onTap: () => openLinearChart<TimeLoggingStatistics>(
+            title: 'Time logged',
+            representationBuilder: _formatDuration,
+            valueBuilder: (pageStatistics) {
+              final statistics = _retrieveStatistics<TimeLoggingStatistics>(pageStatistics);
+              return statistics?.totalLogged.toDouble();
+            },
+          ),
         ),
         ValueCard(
           title: 'Logged / Issue',
           value: _formatDuration(statistics.loggedTimePerIssue),
-          onTap: () => openLinearChart<TimeLoggingStatistics>((pageStatistics) {
-            final statistics = _retrieveStatistics<TimeLoggingStatistics>(pageStatistics);
-            return statistics?.loggedTimePerIssue.inMilliseconds.toDouble();
-          }),
+          onTap: () => openLinearChart<TimeLoggingStatistics>(
+            title: 'Logged / Issue',
+            representationBuilder: _formatDuration,
+            valueBuilder: (pageStatistics) {
+              final statistics = _retrieveStatistics<TimeLoggingStatistics>(pageStatistics);
+              return statistics?.loggedTimePerIssue.toDouble();
+            },
+          ),
         ),
         ValueCard(
           title: 'Logged / Day',
           value: _formatDuration(statistics.loggedTimePerWorkingDay),
           onTap: () => openLinearChart<TimeLoggingStatistics>(
-            (pageStatistics) {
+            title: 'Logged / Day',
+            representationBuilder: _formatDuration,
+            valueBuilder: (pageStatistics) {
               final statistics = _retrieveStatistics<TimeLoggingStatistics>(pageStatistics);
-              return statistics?.loggedTimePerWorkingDay.inMilliseconds.toDouble();
+              return statistics?.loggedTimePerWorkingDay.toDouble();
             },
           ),
         ),
       ]);
     } else if (statistics is NumberFieldStatistics) {
       final fieldId = statistics.configuration.field.id;
-      final sumValue = statistics.configuration.representation == NumberFieldRepresentation.time
-          ? _formatDuration(Duration(seconds: statistics.sum.round()))
+      final isTimeRepresentation = statistics.configuration.representation == NumberFieldRepresentation.time;
+      final sumValue = isTimeRepresentation
+          ? _formatDuration(statistics.sum)
           : statistics.sum.toStringAsFixed(statistics.sum % 1 > 0.005 ? 2 : 0);
-      final averageValue = statistics.configuration.representation == NumberFieldRepresentation.time
-          ? _formatDuration(Duration(seconds: statistics.averageValuePerIssue.round()))
+      final averageValue = isTimeRepresentation
+          ? _formatDuration(statistics.averageValuePerIssue)
           : statistics.averageValuePerIssue.toStringAsFixed(2);
 
       widgets.addAll([
         ValueCard(
           value: sumValue,
           title: 'Σ "${statistics.configuration.field.name}"',
-          onTap: () => openLinearChart<NumberFieldStatistics>((pageStatistics) {
-            final s = _retrieveFieldStatistics<NumberFieldStatistics>(pageStatistics, fieldId);
-            return s?.sum;
-          }),
+          onTap: () => openLinearChart<NumberFieldStatistics>(
+            title: 'Σ "${statistics.configuration.field.name}"',
+            representationBuilder: isTimeRepresentation ? _formatDuration : buildRepresentation,
+            valueBuilder: (pageStatistics) {
+              final s = _retrieveFieldStatistics<NumberFieldStatistics>(pageStatistics, fieldId);
+              return s?.sum;
+            },
+          ),
         ),
         ValueCard(
           title: 'Average',
           value: averageValue,
-          onTap: () => openLinearChart<NumberFieldStatistics>((pageStatistics) {
-            final s = _retrieveFieldStatistics<NumberFieldStatistics>(pageStatistics, fieldId);
-            return s?.averageValuePerIssue;
-          }),
+          onTap: () => openLinearChart<NumberFieldStatistics>(
+            title: 'Average',
+            representationBuilder: isTimeRepresentation ? _formatDuration : buildRepresentation,
+            valueBuilder: (pageStatistics) {
+              final s = _retrieveFieldStatistics<NumberFieldStatistics>(pageStatistics, fieldId);
+              return s?.averageValuePerIssue;
+            },
+          ),
         ),
         ValueCard(
           title: 'Issues with field',
           value: '${statistics.issuesWithFieldCount}',
-          onTap: () => openLinearChart<NumberFieldStatistics>((pageStatistics) {
-            final s = _retrieveFieldStatistics<NumberFieldStatistics>(pageStatistics, fieldId);
-            return s?.issuesWithFieldCount.toDouble();
-          }),
+          onTap: () => openLinearChart<NumberFieldStatistics>(
+            title: 'Issues with field',
+            representationBuilder: buildRepresentation,
+            valueBuilder: (pageStatistics) {
+              final s = _retrieveFieldStatistics<NumberFieldStatistics>(pageStatistics, fieldId);
+              return s?.issuesWithFieldCount.toDouble();
+            },
+          ),
         ),
       ]);
     }
@@ -506,7 +379,8 @@ class _StatisticsSection extends StatelessWidget {
     return widgets;
   }
 
-  String _formatDuration(final Duration duration) {
+  String _formatDuration(final num durationInMiliseconds) {
+    final duration = Duration(milliseconds: durationInMiliseconds.toInt());
     return '${duration.inHours}h ${duration.inMinutes % 60}m';
   }
 
