@@ -130,6 +130,22 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                     maxX: -offset.toDouble(),
                     minX: -(currentMaxPeriods - 1).toDouble(),
                     lineTouchData: LineTouchData(
+                      getTouchedSpotIndicator: (barData, spotIndexes) {
+                        return spotIndexes
+                            .map(
+                              (i) => TouchedSpotIndicatorData(
+                                FlLine(strokeWidth: 2, dashArray: [5, 5, 5], color: Theme.of(context).canvasColor),
+                                FlDotData(
+                                  getDotPainter: (s, x, b, i) => FlDotCirclePainter(
+                                    radius: 5,
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList();
+                      },
                       touchTooltipData: LineTouchTooltipData(
                         tooltipBgColor: Theme.of(context).hoverColor,
                         maxContentWidth: 100,
@@ -236,6 +252,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                     ),
                     lineBarsData: [
                       LineChartBarData(
+                        barWidth: 1.5,
                         spots: buildCurrentViewSpots(),
                         preventCurveOverShooting: true,
                         color: Theme.of(context).primaryColor,

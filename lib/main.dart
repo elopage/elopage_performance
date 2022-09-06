@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    final theme = ThemeData(primarySwatch: Colors.teal);
+    final theme = ThemeData(primarySwatch: Colors.teal, useMaterial3: true);
     return MaterialApp(
       home: const ConfigurationsPage(),
       title: 'elopage performance',

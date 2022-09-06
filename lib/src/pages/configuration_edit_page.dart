@@ -101,6 +101,7 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
                       child: OutlinedButton(
                         onPressed: () => openGroupSelector(state),
                         style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
                           side: hasError ? BorderSide(color: Colors.red[800]!) : null,
                           minimumSize: const Size(100, 75),
                         ),

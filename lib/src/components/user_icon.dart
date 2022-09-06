@@ -7,10 +7,10 @@ class UserIcon extends StatelessWidget {
     required this.avatar,
     this.borderWidth = 0.0,
     this.borderColor = Colors.white,
-    this.defaultAvatar = defaultAvatarUrl,
+    this.defaultAvatar = defaultAvatarAsset,
   }) : super(key: key);
 
-  static const defaultAvatarUrl = 'https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/';
+  static const defaultAvatarAsset = 'assets/jira_placeholder.png';
 
   final String? avatar;
   final double size;
@@ -28,7 +28,16 @@ class UserIcon extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(iconSize),
-          child: Image.network(avatar ?? defaultAvatar, height: iconSize, width: iconSize),
+          child: FadeInImage.assetNetwork(
+            placeholderErrorBuilder: (context, error, stackTrace) => Image.asset(defaultAvatarAsset),
+            imageErrorBuilder: (context, error, stackTrace) => Image.asset(defaultAvatarAsset),
+            image: avatar ?? defaultAvatar,
+            placeholder: defaultAvatar,
+            fadeInDuration: const Duration(milliseconds: 300),
+            fadeOutDuration: const Duration(milliseconds: 150),
+            height: iconSize,
+            width: iconSize,
+          ),
         ),
       );
 }
