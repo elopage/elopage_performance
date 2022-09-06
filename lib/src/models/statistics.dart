@@ -41,8 +41,8 @@ abstract class FieldStatistics extends Statistics {
 
 class NumberFieldStatistics extends FieldStatistics {
   NumberFieldStatistics(
-    final NumberFieldConfiguration super.configuration,
-    final PerformanceData data, {
+    NumberFieldConfiguration super.configuration,
+    PerformanceData data, {
     super.composed,
   }) {
     assert(configuration.type == FieldType.number, 'This statistics can\'t accept other then "number" fields');

@@ -10,13 +10,13 @@ import 'package:elopage_performance/src/service_locator.dart';
 import 'package:flutter/material.dart';
 
 class Period {
-  Period(this.endDate, final int weeksPeriod) {
-    startDate = endDate.subtract(Duration(days: weeksPeriod * DateTime.daysPerWeek));
+  Period(this.startDate, this.endDate) {
+    assert(startDate.isBefore(endDate), 'Start date must be before end date');
     workingDays = startDate.countWorkingDaysBefore(endDate);
   }
 
-  late final DateTime startDate;
   late final int workingDays;
+  final DateTime startDate;
   final DateTime endDate;
 }
 
@@ -25,6 +25,8 @@ class PageStatisticsData {
 
   final Period period;
   final Future<List<Statistics>> _statisticsComputation;
+
+  bool get isComputing => _statistics == null;
 
   List<Statistics>? _statistics;
   List<Statistics>? get statistics => _statistics;
@@ -79,6 +81,7 @@ class PerformanceController extends PageController {
   }
 
   PageStatisticsData get currentStatistics => retrieveStatistics(page?.round() ?? 0);
+  Duration get periodDuration => Duration(days: configuration.dataGrouping * DateTime.daysPerWeek);
 
   Iterable<String> get _userIds => users.map((user) => user.accountId).whereType<String>();
   String get _userIdsQuery =>
@@ -86,26 +89,42 @@ class PerformanceController extends PageController {
 
   PageStatisticsData retrieveStatistics(final int page) {
     assert(page >= 0, 'Page can not be negative');
-    PageStatisticsData? statistics = data[page];
-    if (statistics != null) return statistics;
+    if (data[page] != null) return data[page]!;
 
-    final startDate = DateTime(now.year, now.month, now.day).subtract(
-      Duration(days: page * configuration.dataGrouping * DateTime.daysPerWeek),
-    );
-
-    final period = Period(startDate, configuration.dataGrouping);
-    statistics = PageStatisticsData(period, _fetchPageData(period));
+    final period = _buildPeriod(page);
+    final statistics = PageStatisticsData(period, _fetchPageData(period));
     data[page] = statistics;
 
     return statistics;
   }
 
+  Period _buildPeriod(final int period) {
+    if (configuration.freezeDate == null) {
+      final endDate = DateTime(now.year, now.month, now.day).subtract(periodDuration * period);
+      return Period(endDate.subtract(periodDuration), endDate);
+    }
+
+    final freeze = configuration.freezeDate!;
+    final difference = now.difference(freeze);
+    assert(!difference.isNegative, 'Freeze date can not be set in the future');
+
+    final currentPeriodProgress = Duration(microseconds: difference.inMicroseconds % periodDuration.inMicroseconds);
+    final latestPeriodStartDate = now.subtract(currentPeriodProgress);
+
+    if (period == 0) return Period(latestPeriodStartDate, now);
+
+    final endDate = latestPeriodStartDate.subtract(periodDuration * (period - 1));
+    return Period(endDate.subtract(periodDuration), endDate);
+  }
+
   Future<List<Statistics>> _fetchPageData(final Period period) async {
     final issuesResult = await jira.issueSearch.searchForIssuesUsingJql(
       maxResults: 1000,
-      jql: 'worklogAuthor in ($_userIdsQuery) AND '
-          'worklogDate >= ${period.startDate.jiraDate} AND worklogDate <= ${period.endDate.jiraDate} '
-          'order by created DESC',
+      jql: [
+        'worklogAuthor in ($_userIdsQuery) AND ',
+        'worklogDate >= ${period.startDate.jiraDate} AND worklogDate <= ${period.endDate.jiraDate} ',
+        'order by created DESC',
+      ].join(),
     );
 
     final PerformanceData data = {};
@@ -119,7 +138,7 @@ class PerformanceController extends PageController {
         maxResults: 1000,
       );
 
-      data[issue] = worklogsResult.worklogs;
+      data[issue] = worklogsResult.worklogs.where((w) => _userIdsQuery.contains(w.author?.accountId ?? '')).toList();
     }
 
     return [

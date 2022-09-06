@@ -58,9 +58,18 @@ class _PerformancePageState extends State<PerformancePage> {
           Container(
             alignment: Alignment.center,
             margin: const EdgeInsets.only(right: 16),
-            child: widget.users.length == 1
-                ? UserIcon(avatar: widget.users.first.avatarUrls?.$48X48, size: 40, borderWidth: 2)
-                : UserGroupBadge(users: widget.users, circleSize: 40),
+            child: Row(
+              children: [
+                Text(
+                  '${controller.configuration.dataGrouping}w',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(width: 16),
+                widget.users.length == 1
+                    ? UserIcon(avatar: widget.users.first.avatarUrls?.$48X48, size: 40, borderWidth: 2)
+                    : UserGroupBadge(users: widget.users, circleSize: 40),
+              ],
+            ),
           )
         ],
       ),
@@ -166,18 +175,34 @@ class _PeriodSelectorState extends State<_PeriodSelector> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: const [BoxShadow(offset: Offset(0, 2), blurRadius: 2, color: Colors.black26)],
+          boxShadow: const [BoxShadow(offset: Offset(0, 1.5), blurRadius: 1, color: Colors.black26)],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(splashRadius: 1, onPressed: _openNextPage, icon: const Icon(Icons.chevron_left_rounded)),
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: IconButton(
+                splashRadius: 1,
+                onPressed: _openNextPage,
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.chevron_left_rounded),
+              ),
+            ),
             Text(
               '${format.format(statistics.period.startDate)} - ${format.format(statistics.period.endDate)}',
-              style: Theme.of(context).textTheme.headline6?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            IconButton(splashRadius: 1, onPressed: _openPrevPage, icon: const Icon(Icons.chevron_right_rounded)),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                splashRadius: 1,
+                onPressed: _openPrevPage,
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.chevron_right_rounded),
+              ),
+            ),
           ],
         ),
       ),
@@ -212,7 +237,7 @@ class _PeriodSelectorState extends State<_PeriodSelector> {
 }
 
 class _StatisticsSection extends StatelessWidget {
-  const _StatisticsSection(final this.statistics, {Key? key, required this.openLinearChart}) : super(key: key);
+  const _StatisticsSection(this.statistics, {Key? key, required this.openLinearChart}) : super(key: key);
 
   final Statistics statistics;
   final LinearChartBuilder openLinearChart;

@@ -22,7 +22,7 @@ class ValueCard extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
         onTap: onTap,
         child: Card(
-          elevation: 2.5,
+          elevation: 1.5,
           child: Container(
             constraints: const BoxConstraints(minWidth: 175, maxWidth: 300),
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),

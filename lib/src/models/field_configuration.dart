@@ -58,6 +58,6 @@ enum NumberFieldRepresentation {
 }
 
 class NumberFieldConfiguration extends FieldConfiguration {
-  const NumberFieldConfiguration(super.field, final this.representation);
+  const NumberFieldConfiguration(super.field, this.representation);
   final NumberFieldRepresentation representation;
 }

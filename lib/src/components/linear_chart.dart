@@ -3,6 +3,7 @@ import 'package:elopage_performance/src/models/statistics.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 typedef LinearChartBuilder = void Function<T extends Statistics>({
   required String title,
@@ -37,6 +38,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
   int offset = 0;
   int maxPeriods = 3;
   static const pixelsPerPeriod = 50;
+  final dateFormat = DateFormat.yMd();
 
   int get currentMaxPeriods => maxPeriods + offset;
 
@@ -44,6 +46,14 @@ class _ChartState<T extends Statistics> extends State<Chart> {
     final entries = widget.controller.data.entries.toList();
 
     return entries.map(_spotBuilder).whereType<FlSpot>().toList();
+  }
+
+  bool get isLoading {
+    for (var i = offset; i < currentMaxPeriods; i++) {
+      if (widget.controller.retrieveStatistics(i).isComputing) return true;
+    }
+
+    return false;
   }
 
   @override
@@ -118,150 +128,159 @@ class _ChartState<T extends Statistics> extends State<Chart> {
         color: Colors.transparent,
         child: Container(
           margin: const EdgeInsets.all(32),
-          padding: const EdgeInsets.all(12),
           constraints: BoxConstraints(maxHeight: 400, maxWidth: maxPeriods * 50 + 100),
           decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(6)),
           child: Column(
             children: [
               Expanded(
-                child: LineChart(
-                  LineChartData(
-                    minY: 0,
-                    maxX: -offset.toDouble(),
-                    minX: -(currentMaxPeriods - 1).toDouble(),
-                    lineTouchData: LineTouchData(
-                      getTouchedSpotIndicator: (barData, spotIndexes) {
-                        return spotIndexes
-                            .map(
-                              (i) => TouchedSpotIndicatorData(
-                                FlLine(strokeWidth: 2, dashArray: [5, 5, 5], color: Theme.of(context).canvasColor),
-                                FlDotData(
-                                  getDotPainter: (s, x, b, i) => FlDotCirclePainter(
-                                    radius: 5,
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList();
-                      },
-                      touchTooltipData: LineTouchTooltipData(
-                        tooltipBgColor: Theme.of(context).hoverColor,
-                        maxContentWidth: 100,
-                        getTooltipItems: (touchedSpots) {
-                          final theme = Theme.of(context);
-                          return touchedSpots
-                              .map<LineTooltipItem>(
-                                (s) => LineTooltipItem(
-                                  widget.representationBuilder(s.y),
-                                  theme.textTheme.titleMedium!.copyWith(
-                                    color: theme.primaryColor,
-                                    fontWeight: FontWeight.bold,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: LineChart(
+                    LineChartData(
+                      minY: 0,
+                      maxX: -offset.toDouble(),
+                      minX: -(currentMaxPeriods - 1).toDouble(),
+                      lineTouchData: LineTouchData(
+                        getTouchedSpotIndicator: (barData, spotIndexes) {
+                          return spotIndexes
+                              .map(
+                                (i) => TouchedSpotIndicatorData(
+                                  FlLine(strokeWidth: 2, dashArray: [5, 5, 5], color: Theme.of(context).canvasColor),
+                                  FlDotData(
+                                    getDotPainter: (s, x, b, i) => FlDotCirclePainter(
+                                      radius: 5,
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               )
                               .toList();
                         },
+                        touchTooltipData: LineTouchTooltipData(
+                          tooltipBgColor: Theme.of(context).hoverColor,
+                          maxContentWidth: 100,
+                          getTooltipItems: (touchedSpots) {
+                            final theme = Theme.of(context);
+                            return touchedSpots
+                                .map<LineTooltipItem>(
+                                  (s) => LineTooltipItem(
+                                    widget.representationBuilder(s.y),
+                                    theme.textTheme.titleMedium!.copyWith(
+                                      color: theme.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                )
+                                .toList();
+                          },
+                        ),
                       ),
-                    ),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      topTitles: AxisTitles(
-                        axisNameSize: 40,
-                        sideTitles: SideTitles(showTitles: false),
-                        axisNameWidget: Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            textBaseline: TextBaseline.alphabetic,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(
-                                splashRadius: 1,
-                                onPressed: addOffset,
-                                icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                              ),
-                              const SizedBox(width: 32),
-                              Text(
-                                widget.title,
-                                style: Theme.of(context).textTheme.headline6?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(width: 32),
-                              IconButton(
-                                splashRadius: 1,
-                                onPressed: offset <= 0 ? null : reduceOffset,
-                                icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                              ),
-                            ],
+                      titlesData: FlTitlesData(
+                        show: true,
+                        topTitles: AxisTitles(
+                          axisNameSize: 40,
+                          sideTitles: SideTitles(showTitles: false),
+                          axisNameWidget: Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              textBaseline: TextBaseline.alphabetic,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                IconButton(
+                                  splashRadius: 1,
+                                  onPressed: addOffset,
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                                ),
+                                const SizedBox(width: 32),
+                                Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+                                const SizedBox(width: 32),
+                                IconButton(
+                                  splashRadius: 1,
+                                  padding: EdgeInsets.zero,
+                                  onPressed: offset <= 0 ? null : reduceOffset,
+                                  icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 70,
+                            getTitlesWidget: (value, meta) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Text(
+                                  widget.representationBuilder(value),
+                                  textAlign: TextAlign.right,
+                                  style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 10),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 70,
+                            getTitlesWidget: (value, meta) {
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Text(
+                                  widget.representationBuilder(value),
+                                  textAlign: TextAlign.left,
+                                  style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 10),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          axisNameWidget: Text('Periods in weeks with offset: ${offset}w'),
+                          sideTitles: SideTitles(
+                            interval: 1,
+                            showTitles: true,
+                            reservedSize: 30,
+                            getTitlesWidget: (value, meta) {
+                              final data = widget.controller.data[value.abs().toInt()];
+
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      dateFormat.format(data!.period.startDate),
+                                      style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 8),
+                                    ),
+                                    const SizedBox(width: 32, height: 2, child: Divider()),
+                                    Text(
+                                      value == 0 ? 'now' : dateFormat.format(data.period.endDate),
+                                      style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 8),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 70,
-                          getTitlesWidget: (value, meta) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Text(
-                                widget.representationBuilder(value),
-                                textAlign: TextAlign.right,
-                                style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 10),
-                              ),
-                            );
-                          },
+                      lineBarsData: [
+                        LineChartBarData(
+                          barWidth: 1.5,
+                          spots: buildCurrentViewSpots(),
+                          preventCurveOverShooting: true,
+                          color: Theme.of(context).primaryColor,
+                          belowBarData: BarAreaData(show: true, color: Theme.of(context).primaryColor.withOpacity(0.2)),
                         ),
-                      ),
-                      rightTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 70,
-                          getTitlesWidget: (value, meta) {
-                            return Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: Text(
-                                widget.representationBuilder(value),
-                                textAlign: TextAlign.left,
-                                style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 10),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      bottomTitles: AxisTitles(
-                        axisNameWidget: Text('Periods in weeks with offset: ${offset}w'),
-                        sideTitles: SideTitles(
-                          interval: 1,
-                          showTitles: true,
-                          reservedSize: 30,
-                          getTitlesWidget: (value, meta) {
-                            final periodInWeeks = widget.controller.configuration.dataGrouping;
-                            final period = value.round().abs();
-                            final prevStr = '${(period + 1) * periodInWeeks}${period == 0 ? 'w' : ''}';
-                            final curStr = period == 0 ? 'now' : '${period * periodInWeeks}w';
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 10),
-                              child: Text(
-                                '$prevStr-$curStr',
-                                style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 10),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                      ],
                     ),
-                    lineBarsData: [
-                      LineChartBarData(
-                        barWidth: 1.5,
-                        spots: buildCurrentViewSpots(),
-                        preventCurveOverShooting: true,
-                        color: Theme.of(context).primaryColor,
-                        belowBarData: BarAreaData(show: true, color: Theme.of(context).primaryColor.withOpacity(0.2)),
-                      ),
-                    ],
                   ),
                 ),
               ),
+              if (isLoading) const LinearProgressIndicator(),
             ],
           ),
         ),
