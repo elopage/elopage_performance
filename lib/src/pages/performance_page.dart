@@ -94,6 +94,7 @@ class _PerformancePageState extends State<PerformancePage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Center(child: Text('${snapshot.error}')),
+                            const SizedBox(height: 16),
                             OutlinedButton(
                               onPressed: () => setState(() {}),
                               child: const Text('Refresh'),

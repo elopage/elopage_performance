@@ -186,7 +186,14 @@ class _ConfigurationEditPageState extends State<ConfigurationEditPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: Text('Fields', style: theme.textTheme.headline5)),
-                        TextButton(onPressed: openFieldSelector, child: const Text('+ add')),
+                        RawMaterialButton(
+                          elevation: 1.0,
+                          onPressed: openFieldSelector,
+                          fillColor: theme.primaryColor,
+                          constraints: const BoxConstraints(minWidth: 60.0, minHeight: 26.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          child: const Text('+ add'),
+                        ),
                       ],
                     ),
                   ),

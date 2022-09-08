@@ -39,7 +39,7 @@ class UserGroupBadge extends StatelessWidget {
       );
 
   BoxDecoration get circleDecoration => BoxDecoration(
-        border: Border.all(color: Colors.white, width: borderWidth),
+        border: Border.all(color: Colors.black, width: borderWidth),
         shape: BoxShape.circle,
         color: Colors.black38,
       );

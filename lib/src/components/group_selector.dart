@@ -80,6 +80,7 @@ class _GroupSelectorState extends State<GroupSelector> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Center(child: Text('${snapshot.error}')),
+                          const SizedBox(height: 16),
                           OutlinedButton(
                             onPressed: () => setState(() {
                               buildGroups = _buildGroups();

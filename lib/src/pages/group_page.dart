@@ -52,6 +52,7 @@ class _GroupPageState extends State<GroupPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Center(child: Text('${snapshot.error}')),
+                  const SizedBox(height: 16),
                   OutlinedButton(
                     onPressed: () => setState(() {
                       buildUsers = _buildUsers();

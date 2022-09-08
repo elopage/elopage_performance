@@ -1,3 +1,4 @@
+import 'package:elopage_performance/main.dart';
 import 'package:elopage_performance/src/controllers/performance_controller.dart';
 import 'package:elopage_performance/src/models/statistics.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -149,12 +150,12 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                           return spotIndexes
                               .map(
                                 (i) => TouchedSpotIndicatorData(
-                                  FlLine(strokeWidth: 2, dashArray: [5, 5, 5], color: theme.canvasColor),
+                                  FlLine(strokeWidth: 1, dashArray: [7, 7], color: Colors.black),
                                   FlDotData(
                                     getDotPainter: (s, x, b, i) => FlDotCirclePainter(
                                       radius: 5,
-                                      strokeWidth: 2,
-                                      color: Colors.white,
+                                      strokeColor: elopageGreen,
+                                      color: theme.disabledColor,
                                     ),
                                   ),
                                 ),
@@ -162,7 +163,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                               .toList();
                         },
                         touchTooltipData: LineTouchTooltipData(
-                          tooltipBgColor: theme.hoverColor,
+                          tooltipBgColor: theme.disabledColor,
                           maxContentWidth: 100,
                           getTooltipItems: (touchedSpots) {
                             return touchedSpots
