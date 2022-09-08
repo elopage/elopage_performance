@@ -1,16 +1,24 @@
 # elopage_performance
 
-A new Flutter project.
+A new Flutter project to set some metrics for elopage teams
 
-## Getting Started
+# Run project
+In order to run project define api_token and user fields in launch.json file
+```
+"args": [
+                "--dart-define=api_token=API_TOKEN",
+                "--dart-define=user=USER@MAIL.COM",
+            ],
+```
 
-This project is a starting point for a Flutter application.
+or execute command
+```flutter run --dart-define=api_token=API_TOKEN --dart-define=user=USER@MAIL.COM```
 
-A few resources to get you started if this is your first Flutter project:
+# Build project
+In order to build project read instruction
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+in short:
+1. install appdmg ```npm install -g appdmg```
+2. build project ```flutter build macos --release --dart-define=api_token=API_TOKEN --dart-define=user=USER@MAIL.COM``` 
+3. go to installers fold ```cd installers```
+4. generate dmg ```appdmg ./config.json ./elopage_performance.dmg```

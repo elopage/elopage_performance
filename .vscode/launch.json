@@ -7,19 +7,31 @@
         {
             "name": "elopage_performance",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "args": [
+                "--dart-define=api_token=API_TOKEN",
+                "--dart-define=user=USER@MAIL.COM",
+            ],
         },
         {
             "name": "elopage_performance (profile mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile",
+            "args": [
+                "--dart-define=api_token=API_TOKEN",
+                "--dart-define=user=USER@MAIL.COM",
+            ],
         },
         {
             "name": "elopage_performance (release mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            "args": [
+                "--dart-define=api_token=API_TOKEN",
+                "--dart-define=user=USER@MAIL.COM",
+            ],
         }
     ]
 }

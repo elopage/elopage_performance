@@ -8,7 +8,11 @@ class Jira extends JiraPlatformApi {
   Jira._(super.client);
 
   factory Jira() {
-    final client = ApiClient.basicAuthentication(Uri.https(authority, ''), user: user, apiToken: apiToken);
+    final client = ApiClient.basicAuthentication(
+      Uri.https('elopay.atlassian.net', ''),
+      user: const String.fromEnvironment('user'),
+      apiToken: const String.fromEnvironment('api_token'),
+    );
     return Jira._(client);
   }
 }
