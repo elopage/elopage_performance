@@ -22,3 +22,12 @@ in short:
 2. build project ```flutter build macos --release --dart-define=api_token=API_TOKEN --dart-define=user=USER@MAIL.COM``` 
 3. go to installers fold ```cd installers```
 4. generate dmg ```appdmg ./config.json ./elopage_performance.dmg```
+
+# App preview
+![Alt text](/readme_assets/initial.png?raw=true "Initial")
+![Alt text](/readme_assets/calendar.png?raw=true "Calendar")
+![Alt text](/readme_assets/field_selector.png?raw=true "Field selector")
+![Alt text](/readme_assets/new_config.png?raw=true "New config")
+![Alt text](/readme_assets/users_group.png?raw=true "Users group")
+![Alt text](/readme_assets/user_statistics.png?raw=true "User Statistics")
+![Alt text](/readme_assets/chart_statistics.png?raw=true "Chart Statistics")
