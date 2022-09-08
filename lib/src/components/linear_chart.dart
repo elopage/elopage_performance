@@ -80,7 +80,10 @@ class _ChartState<T extends Statistics> extends State<Chart> {
   Future<void> buildPointForPeriod(final int period) async {
     final data = widget.controller.retrieveStatistics(period);
     if (data.statistics != null) return;
-    await data.statisticsComputation;
+    try {
+      await data.statisticsComputation;
+    } catch (e) {}
+
     if (mounted) setState(() {});
   }
 
@@ -121,6 +124,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Focus(
       autofocus: true,
       onKeyEvent: _onKeyTap,
@@ -129,7 +133,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
         child: Container(
           margin: const EdgeInsets.all(32),
           constraints: BoxConstraints(maxHeight: 400, maxWidth: maxPeriods * 50 + 100),
-          decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(6)),
+          decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(6)),
           child: Column(
             children: [
               Expanded(
@@ -145,7 +149,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                           return spotIndexes
                               .map(
                                 (i) => TouchedSpotIndicatorData(
-                                  FlLine(strokeWidth: 2, dashArray: [5, 5, 5], color: Theme.of(context).canvasColor),
+                                  FlLine(strokeWidth: 2, dashArray: [5, 5, 5], color: theme.canvasColor),
                                   FlDotData(
                                     getDotPainter: (s, x, b, i) => FlDotCirclePainter(
                                       radius: 5,
@@ -158,10 +162,9 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                               .toList();
                         },
                         touchTooltipData: LineTouchTooltipData(
-                          tooltipBgColor: Theme.of(context).hoverColor,
+                          tooltipBgColor: theme.hoverColor,
                           maxContentWidth: 100,
                           getTooltipItems: (touchedSpots) {
-                            final theme = Theme.of(context);
                             return touchedSpots
                                 .map<LineTooltipItem>(
                                   (s) => LineTooltipItem(
@@ -194,7 +197,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                                   icon: const Icon(Icons.chevron_left_rounded, size: 20),
                                 ),
                                 const SizedBox(width: 32),
-                                Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+                                Text(widget.title, style: theme.textTheme.titleLarge),
                                 const SizedBox(width: 32),
                                 IconButton(
                                   splashRadius: 1,
@@ -216,7 +219,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                                 child: Text(
                                   widget.representationBuilder(value),
                                   textAlign: TextAlign.right,
-                                  style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 10),
+                                  style: theme.textTheme.caption?.copyWith(fontSize: 10),
                                 ),
                               );
                             },
@@ -232,7 +235,7 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                                 child: Text(
                                   widget.representationBuilder(value),
                                   textAlign: TextAlign.left,
-                                  style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 10),
+                                  style: theme.textTheme.caption?.copyWith(fontSize: 10),
                                 ),
                               );
                             },
@@ -252,13 +255,26 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                                 child: Column(
                                   children: [
                                     Text(
-                                      dateFormat.format(data!.period.startDate),
-                                      style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 8),
+                                      data?.period.startDate == null ? '' : dateFormat.format(data!.period.startDate),
+                                      style: theme.textTheme.caption?.copyWith(fontSize: 8),
                                     ),
                                     const SizedBox(width: 32, height: 2, child: Divider()),
-                                    Text(
-                                      value == 0 ? 'now' : dateFormat.format(data.period.endDate),
-                                      style: Theme.of(context).textTheme.caption?.copyWith(fontSize: 8),
+                                    RichText(
+                                      text: TextSpan(
+                                        children: [
+                                          if (value == 0 && !(widget.controller.configuration.freezeDate != null))
+                                            const TextSpan(text: 'now'),
+                                          if (value == 0 && widget.controller.configuration.freezeDate != null)
+                                            TextSpan(
+                                              text: '(in progress)',
+                                              style: theme.textTheme.caption
+                                                  ?.copyWith(fontSize: 8, color: theme.primaryColor),
+                                            ),
+                                          if (value != 0 && data?.period.endDate != null)
+                                            TextSpan(text: dateFormat.format(data!.period.endDate)),
+                                        ],
+                                        style: theme.textTheme.caption?.copyWith(fontSize: 8),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -272,8 +288,8 @@ class _ChartState<T extends Statistics> extends State<Chart> {
                           barWidth: 1.5,
                           spots: buildCurrentViewSpots(),
                           preventCurveOverShooting: true,
-                          color: Theme.of(context).primaryColor,
-                          belowBarData: BarAreaData(show: true, color: Theme.of(context).primaryColor.withOpacity(0.2)),
+                          color: theme.primaryColor,
+                          belowBarData: BarAreaData(show: true, color: theme.primaryColor.withOpacity(0.2)),
                         ),
                       ],
                     ),

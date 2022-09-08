@@ -19,27 +19,23 @@ class GroupPage extends StatefulWidget {
 class _GroupPageState extends State<GroupPage> {
   late final Jira jira;
 
-  Group? group;
-  List<UserDetails>? users;
+  Future<List<UserDetails>>? buildUsers;
 
   String get groupName => widget.configuration.group.name ?? '';
 
   @override
   void initState() {
     super.initState();
-    initialize();
+    jira = serviceLocator();
+    buildUsers = _buildUsers();
   }
 
-  Future<void> initialize() async {
-    jira = serviceLocator();
-
+  Future<List<UserDetails>> _buildUsers() async {
     final usersResult = await jira.groups.getUsersFromGroup(
       groupId: widget.configuration.group.groupId,
       maxResults: 100,
     );
-    users = usersResult.values;
-
-    if (mounted) setState(() {});
+    return usersResult.values;
   }
 
   @override
@@ -47,53 +43,72 @@ class _GroupPageState extends State<GroupPage> {
     return Scaffold(
       appBar: AppBar(title: Text(groupName)),
       body: Center(
-        child: users == null
-            ? const CircularProgressIndicator()
-            : ListView.builder(
-                itemCount: users!.length + 1,
-                padding: const EdgeInsets.all(16),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return ListTile(
-                      onTap: _onGroupTap,
-                      tileColor: Colors.white,
-                      leading: UserGroupBadge(users: users!),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        side: BorderSide(color: Theme.of(context).dividerColor, width: 1),
-                      ),
-                      title: Text(
-                        '$groupName group statistics',
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.lato(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    );
-                  }
-
-                  final user = users![index - 1];
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: ListTile(
-                      tileColor: Colors.white,
-                      onTap: () => _onUserTap(user),
-                      leading: UserIcon(avatar: user.avatarUrls?.$48X48),
-                      title: Text('${user.displayName}', overflow: TextOverflow.ellipsis),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                      subtitle: Text('${user.accountId}', overflow: TextOverflow.ellipsis),
+        child: FutureBuilder(
+          future: buildUsers,
+          builder: (BuildContext context, AsyncSnapshot<List<UserDetails>> snapshot) {
+            if (!snapshot.hasData && !snapshot.hasError) return const CircularProgressIndicator();
+            if (snapshot.hasError) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Center(child: Text('${snapshot.error}')),
+                  OutlinedButton(
+                    onPressed: () => setState(() {
+                      buildUsers = _buildUsers();
+                    }),
+                    child: const Text('Refresh'),
+                  )
+                ],
+              );
+            }
+            final users = snapshot.data!;
+            return ListView.builder(
+              itemCount: users.length + 1,
+              padding: const EdgeInsets.all(16),
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return ListTile(
+                    tileColor: Colors.white,
+                    onTap: () => _onGroupTap(users),
+                    leading: UserGroupBadge(users: users),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      side: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+                    ),
+                    title: Text(
+                      '$groupName group statistics',
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.lato(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                   );
-                },
-              ),
+                }
+
+                final user = users[index - 1];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: ListTile(
+                    tileColor: Colors.white,
+                    onTap: () => _onUserTap(user),
+                    leading: UserIcon(avatar: user.avatarUrls?.$48X48),
+                    title: Text('${user.displayName}', overflow: TextOverflow.ellipsis),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    subtitle: Text('${user.accountId}', overflow: TextOverflow.ellipsis),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
 
-  void _onGroupTap() {
-    if (!mounted || users == null) return;
+  void _onGroupTap(final List<UserDetails> users) {
+    if (!mounted) return;
 
-    final page = PerformancePage(users: users!, title: groupName, configuration: widget.configuration);
+    final page = PerformancePage(users: users, title: groupName, configuration: widget.configuration);
     final route = MaterialPageRoute(builder: (context) => page);
     Navigator.push(context, route);
   }

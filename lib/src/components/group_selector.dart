@@ -14,10 +14,8 @@ class GroupSelector extends StatefulWidget {
 
 class _GroupSelectorState extends State<GroupSelector> {
   late final Jira jira;
-  final groups = <GroupDetails>[];
+  late Future<List<GroupDetails>> buildGroups;
   final controller = TextEditingController();
-
-  List<GroupDetails> filteredGroups = [];
 
   @override
   void initState() {
@@ -25,24 +23,20 @@ class _GroupSelectorState extends State<GroupSelector> {
     jira = serviceLocator();
 
     controller.addListener(() {
-      if (mounted) setState(filterGroups);
-    });
-    jira.groups.bulkGetGroups(maxResults: 1000).then((gropResult) {
-      groups.addAll(gropResult.values);
-      filterGroups();
       if (mounted) setState(() {});
     });
+    buildGroups = _buildGroups();
+  }
+
+  Future<List<GroupDetails>> _buildGroups() async {
+    final result = await jira.groups.bulkGetGroups(maxResults: 1000);
+    return result.values;
   }
 
   @override
   void dispose() {
     controller.dispose();
     super.dispose();
-  }
-
-  void filterGroups() {
-    filteredGroups =
-        groups.where((g) => g.name?.toLowerCase().contains(controller.text.trim().toLowerCase()) ?? false).toList();
   }
 
   @override
@@ -75,25 +69,50 @@ class _GroupSelectorState extends State<GroupSelector> {
               ),
               const Divider(height: 32),
               Expanded(
-                child: groups.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                        itemCount: filteredGroups.length,
-                        itemBuilder: (context, index) {
-                          final group = filteredGroups[index];
-                          return GestureDetector(
-                            onTap: () => Navigator.pop(context, group),
-                            child: ListTile(
-                              key: ValueKey(group.groupId),
-                              title: Text(group.name ?? ''),
-                              subtitle: Text(group.groupId ?? ''),
-                              trailing: widget.selected?.groupId == group.groupId
-                                  ? Icon(Icons.check, color: Theme.of(context).primaryColor)
-                                  : null,
-                            ),
-                          );
-                        },
-                      ),
+                child: FutureBuilder<List<GroupDetails>>(
+                  future: buildGroups,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData && !snapshot.hasError) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Center(child: Text('${snapshot.error}')),
+                          OutlinedButton(
+                            onPressed: () => setState(() {
+                              buildGroups = _buildGroups();
+                            }),
+                            child: const Text('Refresh'),
+                          )
+                        ],
+                      );
+                    }
+
+                    final filteredGroups = snapshot.data!
+                        .where((g) => g.name?.toLowerCase().contains(controller.text.trim().toLowerCase()) ?? false)
+                        .toList();
+
+                    return ListView.builder(
+                      itemCount: filteredGroups.length,
+                      itemBuilder: (context, index) {
+                        final group = filteredGroups[index];
+                        return GestureDetector(
+                          onTap: () => Navigator.pop(context, group),
+                          child: ListTile(
+                            key: ValueKey(group.groupId),
+                            title: Text(group.name ?? ''),
+                            subtitle: Text(group.groupId ?? ''),
+                            trailing: widget.selected?.groupId == group.groupId
+                                ? Icon(Icons.check, color: Theme.of(context).primaryColor)
+                                : null,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               )
             ],
           ),

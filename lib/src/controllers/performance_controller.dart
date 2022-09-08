@@ -89,10 +89,17 @@ class PerformanceController extends PageController {
 
   PageStatisticsData retrieveStatistics(final int page) {
     assert(page >= 0, 'Page can not be negative');
+
     if (data[page] != null) return data[page]!;
 
     final period = _buildPeriod(page);
-    final statistics = PageStatisticsData(period, _fetchPageData(period));
+    final pageData = _fetchPageData(period);
+    pageData.catchError((e, s) {
+      data.remove(page);
+      return <Statistics>[];
+    });
+
+    final statistics = PageStatisticsData(period, pageData);
     data[page] = statistics;
 
     return statistics;

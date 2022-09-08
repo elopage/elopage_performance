@@ -87,8 +87,19 @@ class _PerformancePageState extends State<PerformancePage> {
                 builder: (context, snapshot) => AnimatedCrossFade(
                   alignment: Alignment.center,
                   duration: AnimationStyles.defaultDuration,
-                  firstChild: const Center(child: CircularProgressIndicator()),
                   crossFadeState: !snapshot.hasData ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                  firstChild: !snapshot.hasError
+                      ? const Center(child: CircularProgressIndicator())
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Center(child: Text('${snapshot.error}')),
+                            OutlinedButton(
+                              onPressed: () => setState(() {}),
+                              child: const Text('Refresh'),
+                            )
+                          ],
+                        ),
                   secondChild: !snapshot.hasData
                       ? const SizedBox.shrink()
                       : ListView.separated(
@@ -169,41 +180,54 @@ class _PeriodSelectorState extends State<_PeriodSelector> {
       autofocus: true,
       onKeyEvent: _onKeyTap,
       child: Container(
-        height: 50,
-        constraints: const BoxConstraints(minWidth: 450),
-        margin: const EdgeInsets.symmetric(vertical: 16),
+        width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [BoxShadow(offset: Offset(0, 1.5), blurRadius: 1, color: Colors.black26)],
+          gradient: LinearGradient(
+            stops: const [0.1, 1],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white, Colors.white.withOpacity(0)],
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: IconButton(
-                splashRadius: 1,
-                onPressed: _openNextPage,
-                padding: EdgeInsets.zero,
-                icon: const Icon(Icons.chevron_left_rounded),
-              ),
+        child: Center(
+          child: Container(
+            height: 50,
+            constraints: const BoxConstraints(minWidth: 450),
+            margin: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: const [BoxShadow(offset: Offset(0, 1.5), blurRadius: 1, color: Colors.black26)],
             ),
-            Text(
-              '${format.format(statistics.period.startDate)} - ${format.format(statistics.period.endDate)}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: IconButton(
+                    splashRadius: 1,
+                    onPressed: _openNextPage,
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.chevron_left_rounded),
+                  ),
+                ),
+                Text(
+                  '${format.format(statistics.period.startDate)} - ${format.format(statistics.period.endDate)}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: IconButton(
+                    splashRadius: 1,
+                    padding: EdgeInsets.zero,
+                    onPressed: page < 1 ? null : _openPrevPage,
+                    icon: const Icon(Icons.chevron_right_rounded),
+                  ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: IconButton(
-                splashRadius: 1,
-                onPressed: _openPrevPage,
-                padding: EdgeInsets.zero,
-                icon: const Icon(Icons.chevron_right_rounded),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -214,6 +238,7 @@ class _PeriodSelectorState extends State<_PeriodSelector> {
     switch (event.logicalKey.keyId) {
       case 100:
       case 0x100000303:
+        if (page < 1) return KeyEventResult.handled;
         _openPrevPage();
         break;
       case 97:
